@@ -1,4 +1,4 @@
 ﻿using Snake;
 
-SnakeGame game = new SnakeGame();
+Game game = new Game();
 game.Start();

@@ -90,6 +90,10 @@ public class SnakeGame
             Move();
             Thread.Sleep(100);
         }
+
+        Console.Clear();
+        Console.WriteLine("Game Over! Final Score: " + score);
+        Console.ReadKey();
     }
 
     private void Move()

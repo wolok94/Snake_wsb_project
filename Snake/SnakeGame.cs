@@ -1,35 +1,54 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Snake;
 
-public class SnakeGame
+public class Game
 {
     private int screenWidth = 40;
     private int screenHeight = 20;
+    private int snakeX;
+    private int snakeY;
     private int fruitX;
     private int fruitY;
     private int score;
-    private Snake snake = new Snake();
     private bool gameOver;
+    private List<int[]> snakeBody;
     private Random random;
     private Direction currentDirection;
 
-    public SnakeGame()
+    public Game()
     {
-        snake.SnakeX = screenWidth / 2;
-        snake.SnakeY = screenHeight / 2;
+        snakeX = screenWidth / 2;
+        snakeY = screenHeight / 2;
         score = 0;
         gameOver = false;
-        snake.SnakeBody = new List<int[]>();
+        snakeBody = new List<int[]>();
         random = new Random();
         currentDirection = Direction.Right;
     }
 
+    public void Start()
+    {
+        Console.CursorVisible = false;
+        snakeBody.Add(new int[] { snakeX, snakeY });
+        SpawnFruit();
+
+        while (!gameOver)
+        {
+            Draw();
+            Input();
+            Logic();
+            Thread.Sleep(100);
+        }
+
+        Console.Clear();
+        Console.WriteLine("Game Over! Final Score: " + score);
+        Console.ReadKey();
+    }
 
     private void Draw()
     {
@@ -38,15 +57,11 @@ public class SnakeGame
         {
             for (int j = 0; j < screenWidth; j++)
             {
-                if (i == 0 || i == screenHeight - 1)
+                if (i == 0 || i == screenHeight - 1 || j == 0 || j == screenWidth - 1)
                 {
-                    Console.Write("-");
+                    Console.Write("#");
                 }
-                else if (j == 0 || j == screenWidth - 1)
-                {
-                    Console.Write("I");
-                }
-                else if (i == snake.SnakeY && j == snake.SnakeX)
+                else if (i == snakeY && j == snakeX)
                 {
                     Console.Write("O");
                 }
@@ -57,7 +72,7 @@ public class SnakeGame
                 else
                 {
                     bool isBody = false;
-                    foreach (var part in snake.SnakeBody)
+                    foreach (var part in snakeBody)
                     {
                         if (part[0] == j && part[1] == i)
                         {
@@ -77,60 +92,94 @@ public class SnakeGame
         Console.WriteLine("Score: " + score);
     }
 
-    public void Start()
-    {
-        Console.CursorVisible = false;
-        snake.SnakeBody.Add(new int[] { snake.SnakeX, snake.SnakeY });
-
-
-        while (!gameOver)
-        {
-            Draw();
-            Move();
-            Thread.Sleep(100);
-        }
-    }
-
-    private void Move()
+    private void Logic()
     {
         switch (currentDirection)
         {
             case Direction.Up:
-                snake.SnakeY--;
+                snakeY--;
                 break;
             case Direction.Down:
-                snake.SnakeY++;
+                snakeY++;
                 break;
             case Direction.Left:
-                snake.SnakeX--;
+                snakeX--;
                 break;
             case Direction.Right:
-                snake.SnakeX++;
+                snakeX++;
                 break;
         }
-        if (snake.SnakeX <= 0 || snake.SnakeX >= screenWidth - 1 || snake.SnakeY <= 0 || snake.SnakeY >= screenHeight - 1)
+
+        if (snakeX == fruitX && snakeY == fruitY)
+        {
+            score++;
+            SpawnFruit();
+            snakeBody.Add(new int[] { snakeX, snakeY });
+        }
+
+        for (int i = snakeBody.Count - 1; i > 0; i--)
+        {
+            snakeBody[i][0] = snakeBody[i - 1][0];
+            snakeBody[i][1] = snakeBody[i - 1][1];
+        }
+        if (snakeBody.Count > 0)
+        {
+            snakeBody[0][0] = snakeX;
+            snakeBody[0][1] = snakeY;
+        }
+
+        if (snakeX <= 0 || snakeX >= screenWidth - 1 || snakeY <= 0 || snakeY >= screenHeight - 1)
         {
             gameOver = true;
         }
 
-        for (int i = 1; i < snake.SnakeBody.Count; i++)
+        for (int i = 1; i < snakeBody.Count; i++)
         {
-            if (snake.SnakeX == snake.SnakeBody[i][0] && snake.SnakeY == snake.SnakeBody[i][1])
+            if (snakeX == snakeBody[i][0] && snakeY == snakeBody[i][1])
             {
                 gameOver = true;
                 break;
             }
         }
+    }
 
-        for (int i = snake.SnakeBody.Count - 1; i > 0; i--)
+    private void Input()
+    {
+        if (Console.KeyAvailable)
         {
-            snake.SnakeBody[i][0] = snake.SnakeBody[i - 1][0];
-            snake.SnakeBody[i][1] = snake.SnakeBody[i - 1][1];
+            var key = Console.ReadKey(true).Key;
+            switch (key)
+            {
+                case ConsoleKey.UpArrow:
+                    if (currentDirection != Direction.Down) currentDirection = Direction.Up;
+                    break;
+                case ConsoleKey.DownArrow:
+                    if (currentDirection != Direction.Up) currentDirection = Direction.Down;
+                    break;
+                case ConsoleKey.LeftArrow:
+                    if (currentDirection != Direction.Right) currentDirection = Direction.Left;
+                    break;
+                case ConsoleKey.RightArrow:
+                    if (currentDirection != Direction.Left) currentDirection = Direction.Right;
+                    break;
+            }
         }
-        if (snake.SnakeBody.Count > 0)
-        {
-            snake.SnakeBody[0][0] = snake.SnakeX;
-            snake.SnakeBody[0][1] = snake.SnakeY;
-        }
+    }
+
+    private void SpawnFruit()
+    {
+        fruitX = random.Next(1, screenWidth - 1);
+        fruitY = random.Next(1, screenHeight - 1);
+    }
+
+
+
+
+    private enum Direction
+    {
+        Up,
+        Down,
+        Left,
+        Right
     }
 }
